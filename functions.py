@@ -1159,7 +1159,7 @@ def check_cotisations(assureur, df_raw, dates, dft_1_raw=None, rename_dict=None,
                 
     return resultats
 
-@st.cache_data
+@st.cache_data(ttl=1800)
 def id_verif(df_prest_cot_raw, df_effectifs_raw, type_bdd, rename=True, rename_dict=None, inverse=False):
     """
     Check if the unique ids in 'prestations' are present in 'effectifs' (or vice versa if inverse=True).
@@ -1209,7 +1209,7 @@ def id_verif(df_prest_cot_raw, df_effectifs_raw, type_bdd, rename=True, rename_d
     
     return results
 
-@st.cache_data
+@st.cache_data(ttl=1800)
 def controle(df, type_bdd, assureur, dates, dft_1_raw=None, rename_dict=None, raise_err=False):
     if type_bdd.lower() == 'effectifs':
         return check_effectifs(assureur=assureur, df_raw=df, dft_1_raw=dft_1_raw, rename_dict=rename_dict, raise_err=raise_err, results_by_type=False)
@@ -1225,7 +1225,7 @@ def controle(df, type_bdd, assureur, dates, dft_1_raw=None, rename_dict=None, ra
 
 #________________________________________________________ APP Specific functions _____________________________________________________________
 
-@st.cache_data
+@st.cache_data(ttl=1800)
 def load_file_preview(file, nrows=None, dtype=None, usecols=None):
     if file.name.endswith('.csv'):
         return pd.read_csv(file, nrows=nrows, dtype=dtype, na_values="@", keep_default_na=True, usecols=usecols)
@@ -1236,11 +1236,11 @@ def load_file_preview(file, nrows=None, dtype=None, usecols=None):
     else:
         raise ValueError("Unsupported file format")
     
-@st.cache_data
+@st.cache_data(ttl=1800)
 def preview_file(df, nrows=50, height=250):
     st.dataframe(df.head(nrows), height=height)
 
-@st.cache_data
+@st.cache_data(ttl=1800)
 def previw_uploaded_files(uploaded_files):
     dfs = []
     if uploaded_files:
@@ -1302,7 +1302,7 @@ def load_file(file, nrows=None, dtype=None, usecols=None):
     else:
         raise ValueError("Unsupported file format")
     
-@st.cache_resource
+@st.cache_resource(ttl=1800)
 def init_appearance(logo, title):
     
     #logo
@@ -2308,7 +2308,7 @@ def render_custom_text(content: str, color: str = "#6c757d", font_size: str = "1
     )
 
             
-@st.cache_data
+@st.cache_data(ttl=1800)
 def resume_bdd(df, type_bdd):
     
     # extract unique values from cols according to bdd_type using get() method
@@ -2521,7 +2521,7 @@ def process_column_renaming(df_preview, rename_dict, mandatory_cols):
     
     return rename_dict_updated, renamed_columns
 
-@st.cache_data
+@st.cache_data(ttl=1800)
 def display_warnings(warnings, title, header):
     
     with st.expander(orange_markdown_string(title)):
