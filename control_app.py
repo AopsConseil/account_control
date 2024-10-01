@@ -100,7 +100,7 @@ def main():
         rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
         mandatory_cols = fn.mandatory_cols.get(st.session_state.type_fichier, {})[st.session_state.type]
         
-        st.session_state.df = fn.upload_and_rename_multiple("Chargement prévoyance", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
+        fn.upload_and_rename_multiple("Chargement prévoyance", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
         
         if st.session_state.df is not None:
             if (st.session_state.type_fichier == 'santé') and(st.session_state.type == 'prestations'):

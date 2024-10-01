@@ -2672,13 +2672,12 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                     
                     all_dfs.append(df)
 
-                # try:
-                    # st.session_state[store_key] = concat_datasets(all_dfs)
-                df = concat_datasets(all_dfs)
-                st.success("Fichiers chargés avec succès !")
-                return df
-                # except Exception:
-                #     st.error("Une erreur est survenue lors de la concaténation des fichiers")
+                try:
+                    st.session_state[store_key] = concat_datasets(all_dfs)
+                    st.success("Fichiers chargés avec succès !")
+                # return df
+                except Exception:
+                    st.error("Une erreur est survenue lors de la concaténation des fichiers")
                 #                     
             
             # return df_merged #list(all_dfs.values())
