@@ -197,8 +197,9 @@
                 "Identifiant Entreprise": "id_ent",
                 "Identifiant ouvrant droit": "id_assuré",
                 "Identifiant bénéficiaire": "id_bénéf",
+                "SIREN": "siren",
+                "SIRET": "siret",
                 "Type de bénéficiaire": "type_bénéf",
-                "NaN": "date_sortie_bénéf",
                 "Niveau de Couverture Obligatoire": "niveau_couverture_oblg",
                 "Niveau de couverture Facultative": "niveau_couverture_fac",
                 "Catégorie assuré": "cat_assuré",
@@ -206,9 +207,7 @@
                 "Date de sortie dans la catégorie (PP)": "date_sortie_cat",
                 "Sexe": "sexe",
                 "Code Postal ouvrant droit": "code_postal",
-                "Régime de cotisation": "régime",
-                "SIREN": "siren",
-                "SIRET": "siret"
+                "Régime de cotisation": "régime"
             },
             "ag2r": {
                 "Identifiant Entreprise": "id_ent",

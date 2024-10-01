@@ -2583,3 +2583,346 @@ def upload_and_rename(title, mandatory_cols, rename_dict, json_path, types=['csv
             else:
                 render_custom_text("Veuillez valider votre selection", color="#ffbc11")
             
+            
+def find_incomplete_columns(rename_dict_updated):
+    """
+    Identifies columns in the renaming dictionary that are not present in all sub-dictionaries.
+
+    Args:
+    - rename_dict_updated (dict): Dictionary with renaming mappings for each file.
+    
+    Returns:
+    - incomplete_columns (set): Set of columns that are not present in all files.
+    """
+    # Step 1: Get a set of all unique columns across all files
+    all_columns = set()
+    for mapping in rename_dict_updated.values():
+        all_columns.update(mapping.values())
+    
+    # Step 2: Find columns that are missing in any file
+    incomplete_columns = set()
+    
+    for column in all_columns:
+        for mapping in rename_dict_updated.values():
+            # If the column is missing in this sub-dictionary, add it to incomplete_columns
+            if column not in mapping.values():
+                incomplete_columns.add(column)
+                break  # No need to check further if the column is missing in this file
+
+    return incomplete_columns
+
+
+def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, json_path, types=['csv', 'xlsx'], convert_dtype=False, type_bdd=None, container='container', key="uploaded_files"):
+    """
+    Function to upload multiple files and create a column renaming interface.
+
+    Args:
+    - title: Title for the uploader.
+    - mandatory_cols: Dictionary of mandatory columns.
+    - rename_dict: Initial rename dictionary.
+    - json_path: Path to save renaming JSON configuration.
+    """
+    
+    if container == 'container':
+        charger = st.container(border=True)
+    elif container == 'exapnder':
+        charger = st.expander(orange_markdown_string(title), expanded=True)
+
+
+    with charger:
+        
+        render_header("Chargement", font_size="18px")
+        
+        # Step 1: Allow multiple file uploads
+        uploaded_files = st.file_uploader("Veuillez charger vos fichiers", accept_multiple_files=True, type=types, key=key)
+
+        if uploaded_files:
+            dfs = {file.name: load_file_preview(file, nrows=50) for file in uploaded_files}
+
+            # Step 2: Process the renaming interaction and preview for each file
+            rename_dict_updated, renamed_columns = process_column_renaming_multiple(dfs, rename_dict, mandatory_cols, container='container')
+            
+             # Step 3: Validate the renaming before allowing further processing
+            missing_report = find_incomplete_columns(rename_dict_updated)
+
+            if missing_report:
+                st.warning(f"Veillez verifier **{', '.join(missing_report)}** et les remplires correctement")
+
+                # Step 4: When the user clicks 'Valider', process the files and apply renaming
+            if st.button('Valider', key=key + '_btn'):
+                all_dfs = []
+
+                for file in uploaded_files:
+                    import_dtypes = get_dtypes(rename_dict_updated[file.name])
+                    df = load_file(file, dtype=import_dtypes)
+                    df = rename_func(
+                        df,
+                        type_fichier=st.session_state.type_fichier,
+                        type_bdd=st.session_state.type,
+                        assureur=st.session_state.assr,
+                        rename_dict=rename_dict_updated[file.name],
+                        keep_default_dict=False,
+                        warn=False,
+                        update_json=True,
+                        json_file=json_path,
+                    )[renamed_columns[file.name]]
+
+                    if convert_dtype and type_bdd:
+                        df = convert_dtypes(df, type_fichier='prévoyance', type_bdd=type_bdd)
+                    
+                    all_dfs.append(df)
+
+                # try:
+                    # st.session_state[store_key] = concat_datasets(all_dfs)
+                df = concat_datasets(all_dfs)
+                st.success("Fichiers chargés avec succès !")
+                return df
+                # except Exception:
+                #     st.error("Une erreur est survenue lors de la concaténation des fichiers")
+                #                     
+            
+            # return df_merged #list(all_dfs.values())
+
+def create_edit_df(standard_columns, dfs, rename_dict):
+    """
+    Create an edit DataFrame (edit_df) for renaming columns across multiple files.
+
+    Args:
+    - standard_columns: List of new standard column names.
+    - dfs: Dictionary of DataFrames (key is file name, value is DataFrame).
+
+    Returns:
+    - edit_df: DataFrame with 'New Column' and columns for each DataFrame.
+    """
+    edit_df = pd.DataFrame({'New Column': standard_columns})
+
+    # Add a column for each DataFrame (file), initially with None values
+    for file_name, df in dfs.items():
+        edit_df[file_name] = None
+        
+        original_names = df.columns
+
+        new_names = {k: v for k, v in rename_dict.items() if k in original_names}
+        
+        # Map the 'Original' column with the new_names from 'Colonne'
+        if new_names:
+            edit_df[file_name] = edit_df['New Column'].map({v: k for k, v in new_names.items()})
+            
+        
+        
+
+    return edit_df
+
+def column_rename_interaction_multi(edit_df, dfs):
+    """
+    Interact with the user to allow renaming columns across multiple files through a data editor interface.
+
+    Args:
+    - edit_df (pd.DataFrame): DataFrame with columns for renaming.
+    - dfs (dict): Dictionary of DataFrames for each uploaded file.
+
+    Returns:
+    - rename_dict_updated (dict): Updated rename dictionary from user input for all files.
+    """
+    # Create column configuration for each DataFrame (for select boxes)
+    column_config = {
+        'New Column': st.column_config.Column(label="New Column")
+    }
+
+    # Add a SelectboxColumn for each file
+    for file_name, df in dfs.items():
+        column_config[file_name] = st.column_config.SelectboxColumn(
+            label=f'{file_name}',
+            required=False,
+            options=list(df.columns)
+        )
+
+    # Display the DataFrame editor
+    new_column_names = st.data_editor(
+        edit_df,
+        column_config=column_config,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # Update the rename dictionary based on the user input
+    rename_dict_updated = {file_name: {} for file_name in dfs.keys()}
+
+    for index, row in new_column_names.iterrows():
+        for file_name in dfs.keys():
+            if row[file_name] not in [None, 'null', np.nan, "NaN", ""]:
+                rename_dict_updated[file_name][row[file_name]] = row['New Column']
+
+    return rename_dict_updated
+
+def display_file_preview_in_popover(dfs, rename_dict_updated, container="expander"):
+    """
+    Display previews of each DataFrame with popovers for the user to view selected columns.
+
+    Args:
+    - dfs (dict): Dictionary of DataFrames.
+    - rename_dict_updated (dict): Dictionary of updated column mappings for each file.
+    """
+    
+    for file_name, df in dfs.items():
+        if container == 'expander':
+            with st.expander(f"{file_name}"):
+                display_renamed_preview(df, rename_dict_updated[file_name])
+        elif container == 'popover':
+            with st.popover(f"{file_name}"):
+                display_renamed_preview(df, rename_dict_updated[file_name])
+        elif container == 'container':
+            with st.container(border=False):
+                display_renamed_preview(df, rename_dict_updated[file_name])
+
+def process_column_renaming_multiple(dfs, rename_dict, mandatory_cols, container='container'):
+    """
+    Full process of renaming columns across multiple DataFrames and previewing the renamed DataFrames.
+
+    Args:
+    - dfs (dict): Dictionary of DataFrames for each uploaded file.
+    - rename_dict: Dictionary of renaming mappings.
+    - mandatory_cols: Mandatory columns for renaming.
+
+    Returns:
+    - rename_dict_updated (dict): Updated rename dictionaries for each file.
+    - renamed_columns (dict): Renamed columns for each file.
+    """
+    # Create a list of standard column names (can come from your mandatory_cols or another source)
+    standard_columns = mandatory_cols.keys()
+
+    # Create the edit DataFrame for column renaming
+    edit_df = create_edit_df(standard_columns, dfs, rename_dict)
+    
+    if len(dfs) < 2:
+        col1, col2 = st.columns([1,2])
+        
+        with col1:
+            render_header("Renommer les colonnes", font_size="18px")
+            rename_dict_updated = column_rename_interaction_multi(edit_df, dfs)
+        
+        with col2:
+            render_header("Aperçu des données", font_size="18px")
+            display_file_preview_in_popover(dfs, rename_dict_updated, container='container')
+            
+    else:
+        col1, col2 = st.columns([2,1])
+    
+        with col1:
+            render_header("Renommer les colonnes", font_size="18px")
+            
+            # Column renaming interaction with multi-file support
+            rename_dict_updated = column_rename_interaction_multi(edit_df, dfs)
+
+        with col2:
+            render_header("Aperçu des données", font_size="18px")
+            
+            # Display file previews in popovers or expanders
+            if container == 'container':
+                display_file_preview_in_popover(dfs, rename_dict_updated, container='expander')
+            elif container == 'expander':
+                display_file_preview_in_popover(dfs, rename_dict_updated, container='popover')
+
+    renamed_columns = {file_name: list(rename_dict_updated[file_name].values()) for file_name in dfs.keys()}
+    
+    return rename_dict_updated, renamed_columns
+
+def concat_datasets(dfs, keep_all_columns=False, raise_alerte=True, selected_columns=None, rename_dicts=None):
+    """
+    Concaténer plusieurs DataFrames en vérifiant les colonnes communes et les types de données.
+    
+    Args:
+    dfs (list): Liste des DataFrames à concaténer.
+    keep_all_columns (bool): Garder toutes les colonnes ou seulement les colonnes communes.
+    raise_alerte (bool): Lancer une exception en cas de types de données incohérents.
+    selected_columns (list): Liste des colonnes sélectionnées pour la concaténation.
+    rename_dicts (list): Liste de dictionnaires de renommage des colonnes pour chaque DataFrame.
+    
+    Returns:
+    pd.DataFrame: DataFrame concaténé.
+    """
+    
+    # Renommer les colonnes des DataFrames si nécessaire
+    if rename_dicts:
+        # Transforme les tuples de colonnes en paires clé-valeur dans le dictionnaire de renommage
+        expanded_rename_dict = {}
+        for key, value in rename_dicts.items():
+            if isinstance(key, (list, tuple)):
+                for col in key:
+                    expanded_rename_dict[col] = value
+            else:
+                expanded_rename_dict[key] = value
+
+        # Appliquer le renommage aux DataFrames
+        for i in range(len(dfs)):
+            dfs[i] = dfs[i].rename(columns=expanded_rename_dict)
+    
+    # Obtenir les colonnes communes et non communes parmi tous les DataFrames
+    common_cols = set(dfs[0].columns)
+    all_cols = set(dfs[0].columns)
+    
+    for df in dfs[1:]:
+        all_cols |= set(df.columns)
+        common_cols &= set(df.columns)
+    
+    only_in_first_df = all_cols - common_cols
+    
+    warnings = "\nWARNINGS:\n"
+    alerte = "\nALERTE!!!!!:\n"
+    
+    # Collecter les colonnes non communes et les DataFrames correspondants
+    cols_non_communes = {}
+    for i, df in enumerate(dfs, start=1):
+        cols_non_communes[f'DF{i}'] = set(df.columns) - common_cols
+
+    for df_name, cols in cols_non_communes.items():
+        if cols:
+            warnings += f"\n            - Colonnes seulement dans {df_name}: {cols}"
+    
+    # Vérifier si les types de données des colonnes partagées sont les mêmes
+    different_types = {}
+    for col in common_cols:
+        col_types = {}
+        for i, df in enumerate(dfs, start=1):
+            if col in df.columns:
+                col_types[f'DF{i}'] = df[col].dtype
+        if len(set(col_types.values())) > 1:
+            different_types[col] = col_types
+    
+    if len(different_types) > 0:
+        alerte += "      Types de données incohérents:"
+        for col, types in different_types.items():
+            alerte += f"\n            - Colonne '{col}' => {types}."
+        
+        if raise_alerte:
+            raise ValueError(alerte)
+        else:
+            print(alerte)
+    
+    # Concaténer les DataFrames
+    if keep_all_columns:
+        result_df = pd.concat(dfs, ignore_index=True, sort=False)
+    else:
+        result_df = pd.concat([df[list(common_cols)] for df in dfs], ignore_index=True)
+    
+    # Réorganiser les colonnes pour correspondre à l'ordre du premier DataFrame
+    if keep_all_columns:
+        result_df = result_df[dfs[0].columns.tolist() + list(all_cols - set(dfs[0].columns))]
+    else:
+        result_df = result_df[dfs[0].columns.intersection(common_cols).tolist()]
+    
+    # Si des colonnes sélectionnées sont spécifiées, les utiliser pour la concaténation
+    if selected_columns is not None:
+        result_df = result_df[selected_columns]
+        
+    # Sortir des warnings pour les colonnes non gardées si keep_all_columns est False
+    if not keep_all_columns:
+        cols_supp = "\n\n      Colonnes non gardées:"
+        if only_in_first_df:
+            cols_supp += f"\n      {only_in_first_df}"
+        warnings += cols_supp
+    warnings += f"\n\n      Colonnes gardées:\n      {common_cols}"
+    
+    print(warnings)
+        
+    return result_df

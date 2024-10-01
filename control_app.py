@@ -93,72 +93,24 @@ def main():
             if (st.session_state.type is not None) and ((st.session_state.type_risque is not None) or (st.session_state.type == 'cotisations')):
                 st.session_state.assr = cols[2].selectbox(label="Selectionnez l'assureur", options=assr_dispo, index=None, key="assr_w")            
 
-    uploaded_file = None
+    # uploaded_file = None
 
     if st.session_state.type_fichier and st.session_state.type and st.session_state.assr:
-        # Chargement des fichiers
-        uploaded_file = st.file_uploader("Choisir un fichier", accept_multiple_files=False, type=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], 
-                                        #   on_change=change_init_state
-                                        )
+        
+        rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
+        mandatory_cols = fn.mandatory_cols.get(st.session_state.type_fichier, {})[st.session_state.type]
+        
+        st.session_state.df = fn.upload_and_rename_multiple("Chargement prévoyance", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
+        
+        if st.session_state.df is not None:
+            if (st.session_state.type_fichier == 'santé') and(st.session_state.type == 'prestations'):
+                if "code_acte" in st.session_state.df.columns:
+                    try:
+                        st.session_state.df = fn.merge_codification_aops(st.session_state.df, assureur=st.session_state.assr, codification_file_path=r"C:\Users\Yacine AMMI\Yacine\Utilities\Codifications Actes_v170524.xlsx")
+                        st.success("Codification AOPS ajouté avec succès")
 
-        if uploaded_file:
-            
-            #----------------------------------------------  Rename the DF-----------------------------------------------------
-            
-            uploaded_file.seek(0)
-            df_preview = fn.load_file_preview(uploaded_file, nrows=50)
-            
-            rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
-            mandatory_cols = fn.mandatory_cols.get(st.session_state.type_fichier, {})[st.session_state.type]
-            
-            rename_dict_updated, renamed_columns = fn.process_column_renaming(df_preview, rename_dict, mandatory_cols)
-            
-            #------------------------------------------------- Validate and test conversions -----------------------------------------------------------------------------
-            
-            if st.button("Valider et importer la base complète"):
-                st.session_state.renamed_preview = fn.rename_func(
-                    df_preview, 
-                    type_fichier=st.session_state.type_fichier,
-                    type_bdd=st.session_state.type,
-                    assureur=st.session_state.assr,
-                    rename_dict=rename_dict_updated,
-                    keep_default_dict=False,
-                    warn=False,
-                    update_json=True,
-                    json_file=json_path,
-                )
-                st.session_state.renamed_preview = fn.convert_dtypes(st.session_state.renamed_preview[renamed_columns], type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type, raise_warning=True )
-                st.write(st.session_state.renamed_preview)
-                
-        #------------------------------------------------- Import, rename and convert the whole dataset------------------------------------------------------------------------------        
-        # if st.button("Valider et importer la base compléte"):
-                st.subheader('Importation de la BDD complète')
-                
-                import_dtypes = fn.get_dtypes(rename_dict_updated)
-                
-                df = fn.load_file(uploaded_file, dtype=import_dtypes)
-                df = fn.rename_func(
-                    df,
-                    type_fichier=st.session_state.type_fichier,
-                    type_bdd=st.session_state.type,
-                    assureur=st.session_state.assr,
-                    rename_dict=rename_dict_updated,
-                    keep_default_dict=False,
-                    warn=False,
-                    update_json=True,
-                    json_file=json_path,
-                )
-                
-                st.session_state.df = fn.convert_dtypes(df[renamed_columns], type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type, raise_warning=False)
-            
-                if (st.session_state.type_fichier == 'santé') and(st.session_state.type == 'prestations'):
-                    if "code_acte" in st.session_state.df.columns:
-                        try:
-                            st.session_state.df = fn.merge_codification_aops(st.session_state.df, assureur=st.session_state.assr, codification_file_path=r"C:\Users\Yacine AMMI\Yacine\Utilities\Codifications Actes_v170524.xlsx")
-                            st.success("Codification AOPS ajouté avec succès")
-
-                        except Exception:
-                            st.error("Erreur lors de la codification des actes AOPS")
+                    except Exception:
+                        st.error("Erreur lors de la codification des actes AOPS")
                             
             #------------------------------------------------- Format labels ------------------------------------------------------------------------------     
             
