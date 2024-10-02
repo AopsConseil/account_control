@@ -6,6 +6,7 @@ import datetime
 from os import path
 from json import load, dump
 from io import BytesIO
+import gc
 
 
 
@@ -1268,6 +1269,7 @@ def estimate_csv_rows(file):
 
 def load_file(file, nrows=None, dtype=None, usecols=None):
     CHUNK_SIZE = 5000  # Number of rows per chunk
+    LARGE_FILE_SIZE = 80 * 1024 * 1024  # 10MB threshold for large files
 
     if file.name.endswith('.csv'):
         total_rows = nrows if nrows is not None else estimate_csv_rows(file)
@@ -1291,16 +1293,65 @@ def load_file(file, nrows=None, dtype=None, usecols=None):
         progress_bar.progress(1.0)
         return pd.concat(chunks, ignore_index=True)
 
-    elif file.name.endswith('.xlsx') or file.name.endswith('.xls') or file.name.endswith('.xlsb'):
+    elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
+        # Check file size and use openpyxl for large datasets
+        if file.size > LARGE_FILE_SIZE:
+            st.write(f'The file is large ({file.size / (1024 * 1024):.2f} MB). Using openpyxl for better performance.')
+            engine = 'openpyxl'  # Use openpyxl for large Excel files
+        else:
+            st.write(f'The file is small ({file.size / (1024 * 1024):.2f} MB). Using calamine for faster loading.')
+            engine = 'calamine'  # Use calamine for small Excel files
+        
         with st.spinner(f'Chargement du fichier {file.name}....'):
-            # Streamlit file uploader provides an in-memory buffer
-            return pd.read_excel(file, nrows=nrows, dtype=dtype, na_values="@", keep_default_na=True, engine="calamine", usecols=usecols)
+            file.seek(0)
+            return pd.read_excel(file, nrows=nrows, dtype=dtype, na_values="@", keep_default_na=True, engine=engine, usecols=usecols)
+
+    elif file.name.endswith('.xlsb'):
+        with st.spinner(f'Chargement du fichier {file.name}....'):
+            return pd.read_excel(file, nrows=nrows, dtype=dtype, na_values="@", keep_default_na=True, engine="pyxlsb", usecols=usecols)
+
     elif file.name.endswith('.pkl') or file.name.endswith('.pickle'):
         with st.spinner(f'Chargement du fichier {file.name}....'):
             file.seek(0)
             return pd.read_pickle(file)
     else:
         raise ValueError("Unsupported file format")
+
+# def load_file(file, nrows=None, dtype=None, usecols=None):
+#     CHUNK_SIZE = 5000  # Number of rows per chunk
+
+#     if file.name.endswith('.csv'):
+#         total_rows = nrows if nrows is not None else estimate_csv_rows(file)
+        
+#         st.write(f'Chargement du fichier {file.name}....')  # Display label
+#         progress_bar = st.progress(0)
+#         chunks = []
+#         rows_processed = 0
+
+#         # Reset file pointer to the beginning for reading
+#         file.seek(0)
+#         chunk_iter = pd.read_csv(file, nrows=nrows, dtype=dtype, na_values="@", keep_default_na=True, usecols=usecols, chunksize=CHUNK_SIZE)
+        
+#         for chunk in chunk_iter:
+#             chunks.append(chunk)
+#             rows_processed += len(chunk)
+#             progress_bar.progress(min(1.0, rows_processed / total_rows))
+#             if rows_processed >= total_rows:
+#                 break
+
+#         progress_bar.progress(1.0)
+#         return pd.concat(chunks, ignore_index=True)
+
+#     elif file.name.endswith('.xlsx') or file.name.endswith('.xls') or file.name.endswith('.xlsb'):
+#         with st.spinner(f'Chargement du fichier {file.name}....'):
+#             # Streamlit file uploader provides an in-memory buffer
+#             return pd.read_excel(file, nrows=nrows, dtype=dtype, na_values="@", keep_default_na=True, engine="calamine", usecols=usecols)
+#     elif file.name.endswith('.pkl') or file.name.endswith('.pickle'):
+#         with st.spinner(f'Chargement du fichier {file.name}....'):
+#             file.seek(0)
+#             return pd.read_pickle(file)
+#     else:
+#         raise ValueError("Unsupported file format")
     
 @st.cache_resource(ttl=1800)
 def init_appearance(logo, title):
@@ -2653,6 +2704,7 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 all_dfs = []
 
                 for file in uploaded_files:
+                    gc.collect()
                     import_dtypes = get_dtypes(rename_dict_updated[file.name])
                     df = load_file(file, dtype=import_dtypes)
                     df = rename_func(
