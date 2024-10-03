@@ -2695,7 +2695,7 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
             
              # Step 3: Validate the renaming before allowing further processing
             missing_report = find_incomplete_columns(rename_dict_updated)
-
+            
             if missing_report:
                 st.warning(f"Veillez verifier **{', '.join(missing_report)}** et les remplires correctement")
 
@@ -2706,7 +2706,7 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 for file in uploaded_files:
                     gc.collect()
                     import_dtypes = get_dtypes(rename_dict_updated[file.name])
-                    df = load_file(file, dtype=import_dtypes)
+                    df = load_file(file, dtype=import_dtypes, usecols=list(rename_dict_updated[file.name].keys()))
                     df = rename_func(
                         df,
                         type_fichier=st.session_state.type_fichier,
@@ -2727,6 +2727,8 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 try:
                     st.session_state[store_key] = concat_datasets(all_dfs)
                     st.success("Fichiers chargés avec succès !")
+                    del all_dfs
+                    gc.collect()
                 # return df
                 except Exception:
                     st.error("Une erreur est survenue lors de la concaténation des fichiers")
