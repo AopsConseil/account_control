@@ -7,24 +7,6 @@ from os import path
 from json import load, dump
 from io import BytesIO
 import gc
-import psutil
-
-
-def display_system_resources():
-    # Get the system's memory usage
-    memory_info = psutil.virtual_memory()
-    
-    # Get the system's CPU usage
-    cpu_percent = psutil.cpu_percent(interval=1)
-    
-    # Display RAM usage (in GB)
-    st.write(f"**Total Memory**: {memory_info.total / (1024 ** 3):.2f} GB")
-    st.write(f"**Available Memory**: {memory_info.available / (1024 ** 3):.2f} GB")
-    st.write(f"**Used Memory**: {memory_info.used / (1024 ** 3):.2f} GB")
-    st.write(f"**Memory Usage**: {memory_info.percent}%")
-    
-    # Display CPU usage
-    st.write(f"**CPU Usage**: {cpu_percent}%")
     
 # def correction_dates_integrale(df_raw, col, date_format='%m/%d/%Y'):
     
@@ -2723,7 +2705,6 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 all_dfs = []
 
                 for file in uploaded_files:
-                    display_system_resources()
                     gc.collect()
                     import_dtypes = get_dtypes(rename_dict_updated[file.name])
                     # st.write(import_dtypes, rename_dict_updated[file.name])
