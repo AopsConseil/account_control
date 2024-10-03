@@ -58,21 +58,6 @@ def main():
             
             # selectionner l'assureur
             st.session_state.assr = cols[2].selectbox(label="Selectionnez l'assureur", options=assr_dispo, placeholder='Assureur', index=None, key="assr_w")
-            
-            # with cols[2]:
-            #     cols[2].markdown("<div style='width: 1px; height: 28px'></div>", unsafe_allow_html=True)
-            #     # add button to add new 'assureur'
-            #     with st.popover("Ajouter un assureur", help="""**A utiliser avec prudence:** \n l'asureur va etre ajouté a la base de données"""):
-            #         new_assr = st.text_input("Ecrire le nom de l'assureur", placeholder="Nom de l'assureur",)
-            #         if  st.button("Ajouter l'assureur"):
-            #             if new_assr.lower() not in fn.get_types_assureurs(json_path):
-            #                 fn.add_assureur(json_path, st.session_state.type, new_assr.lower())
-            #                 # message de succès
-            #                 st.success(
-            #                     f"**{new_assr.lower()}** a été ajouté avec succès"
-            #                 )
-            #             else:
-            #                 st.error(f"**{new_assr.lower()}** existe deja")
 
     elif st.session_state.type_fichier == "prévoyance":
         
@@ -100,7 +85,7 @@ def main():
         rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
         mandatory_cols = fn.mandatory_cols.get(st.session_state.type_fichier, {})[st.session_state.type]
         
-        fn.upload_and_rename_multiple("Chargement prévoyance", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
+        fn.upload_and_rename_multiple("Chargement des Fichiers", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
         
         if st.session_state.df is not None:
             if (st.session_state.type_fichier == 'santé') and(st.session_state.type == 'prestations'):
@@ -179,22 +164,28 @@ def main():
             #------------------------------------------------- Upload T-1 ------------------------------------------------------------------------------                    
                     
                     mandatory_cols = ['id_bénéf', 'id_assuré', 'id_ent', 'siren']
-                    rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
-                    st.session_state.df_1 = fn.upload_and_rename(title="Charger T-1", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_1_up')
-            
+                    # rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
+                    # st.session_state.df_1 = fn.upload_and_rename(title="Charger T-1", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_1_up')
+                    
+                    fn.upload_and_rename_multiple(title="Charger T-1", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df_1', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="df_1_up")
+
+                    
                 #------------------------------------------------- Control coherence and display warnings------------------------------------------------------------------------------
                     if st.session_state.type_fichier == 'santé':
                         if st.session_state.type in ['prestations', 'cotisations']:
                             st.session_state.tmp = None
-                            st.session_state.tmp = fn.upload_and_rename(title="Charger effectifs", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_eff_up')
+                            # st.session_state.tmp = fn.upload_and_rename(title="Charger effectifs", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_eff_up')
+                            fn.upload_and_rename_multiple(title="Charger effectifs", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='tmp', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="df_eff_up")
                             if st.session_state.tmp is not None:
                                 st.session_state.df_eff = st.session_state.tmp
-                            
+
                         elif  st.session_state.type == 'effectifs':
                             st.session_state.tmp = None
-                            st.session_state.tmp = fn.upload_and_rename(title="Charger prestations", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_prest_up')
+                            # st.session_state.tmp = fn.upload_and_rename(title="Charger prestations", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_prest_up')
+                            fn.upload_and_rename_multiple(title="Charger prestations", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='tmp', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="df_prest_up")
                             if st.session_state.tmp is not None:
                                 st.session_state.df_prest = st.session_state.tmp
+                                
                         # elif st.session_state.type == 'cotisations':
                         #     st.session_state.df_cot = fn.upload_and_rename(title="Charger prestations", mandatory_cols=mandatory_cols, rename_dict=rename_dict, json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], key='df_prest_up')
                         

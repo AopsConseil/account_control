@@ -1296,10 +1296,10 @@ def load_file(file, nrows=None, dtype=None, usecols=None):
     elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
         # Check file size and use openpyxl for large datasets
         if file.size > LARGE_FILE_SIZE:
-            st.write(f'The file is large ({file.size / (1024 * 1024):.2f} MB). Using openpyxl for better performance.')
+            # st.write(f'The file is large ({file.size / (1024 * 1024):.2f} MB). Using openpyxl for better performance.')
             engine = 'openpyxl'  # Use openpyxl for large Excel files
         else:
-            st.write(f'The file is small ({file.size / (1024 * 1024):.2f} MB). Using calamine for faster loading.')
+            # st.write(f'The file is small ({file.size / (1024 * 1024):.2f} MB). Using calamine for faster loading.')
             engine = 'calamine'  # Use calamine for small Excel files
         
         with st.spinner(f'Chargement du fichier {file.name}....'):
@@ -1525,7 +1525,8 @@ def get_types_assureurs(type_fichier, json_path):
 #             dump(data, file, ensure_ascii=False, indent=4)
 #     else:
 #         st.error('JSON file not found')
-        
+
+@st.cache_resource()
 def get_col_maps(type_fichier, type_bdd, assureur, json_path=r'C:\Users\Yacine AMMI\Yacine\Notebooks\AOPS\Scripts\renaming.json'):
     
     from os import path
@@ -2681,8 +2682,10 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
 
 
     with charger:
-        
-        render_header("Chargement", font_size="18px")
+        if container == 'container':
+            render_header(title)
+        else:
+            render_header("Chargement", font_size="18px")
         
         # Step 1: Allow multiple file uploads
         uploaded_files = st.file_uploader("Veuillez charger vos fichiers", accept_multiple_files=True, type=types, key=key)
@@ -2697,7 +2700,7 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
             missing_report = find_incomplete_columns(rename_dict_updated)
             
             if missing_report:
-                st.warning(f"Veillez verifier **{', '.join(missing_report)}** et les remplires correctement")
+                st.warning(f"Veuillez vérifier pour tous les fichiers: **{', '.join(missing_report)}**")
 
                 # Step 4: When the user clicks 'Valider', process the files and apply renaming
             if st.button('Valider', key=key + '_btn'):
@@ -2706,6 +2709,7 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 for file in uploaded_files:
                     gc.collect()
                     import_dtypes = get_dtypes(rename_dict_updated[file.name])
+                    # st.write(import_dtypes, rename_dict_updated[file.name])
                     df = load_file(file, dtype=import_dtypes, usecols=list(rename_dict_updated[file.name].keys()))
                     df = rename_func(
                         df,
@@ -2720,7 +2724,7 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                     )[renamed_columns[file.name]]
 
                     if convert_dtype and type_bdd:
-                        df = convert_dtypes(df, type_fichier='prévoyance', type_bdd=type_bdd)
+                        df = convert_dtypes(df, type_fichier=st.session_state.type_fichier, type_bdd=type_bdd)
                     
                     all_dfs.append(df)
 
@@ -2730,8 +2734,8 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                     del all_dfs
                     gc.collect()
                 # return df
-                except Exception:
-                    st.error("Une erreur est survenue lors de la concaténation des fichiers")
+                except Exception as e:
+                    st.error(f"Une erreur est survenue lors de la concaténation des fichiers \n {e}")
                 #                     
             
             # return df_merged #list(all_dfs.values())
