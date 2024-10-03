@@ -3,6 +3,7 @@ import functions as fn
 import os
 
 
+
 # streamlit run "C:\Users\Yacine AMMI\Yacine\Notebooks\AOPS\Scripts\Controle Fichiers\control_app.py"--server.maxUploadSize 3000
 
 
@@ -44,10 +45,7 @@ def main():
     # selectionner le type de fichier ["Santé", "Prevoyance"] 
     with cols[0]:
         
-        st.session_state.type_fichier = st.radio('Type de fichier', ["santé", "prévoyance"],
-                                             help='Sélectionner le type de fichier',
-                                             horizontal=True, 
-                                             index=None)
+        st.session_state.type_fichier = st.radio('Type de fichier', ["santé", "prévoyance"], help='Sélectionner le type de fichier', horizontal=True, index=None)
         types_dispo, assr_dispo = fn.get_types_assureurs(type_fichier=st.session_state.type_fichier, json_path=json_path)
         
     if st.session_state.type_fichier == "santé":
