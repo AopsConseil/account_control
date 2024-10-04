@@ -1426,7 +1426,7 @@ def get_interactive_quarters():
         
         # Display the date input with the quarter's start and end dates
         dates = st.date_input(
-            "Select the control period",
+            "Selectionner la période de contrôle",
             (start_date, end_date),
             format="DD-MM-YYYY"
         )
@@ -2844,7 +2844,12 @@ def process_column_renaming_multiple(dfs, rename_dict, mandatory_cols, container
     - renamed_columns (dict): Renamed columns for each file.
     """
     # Create a list of standard column names (can come from your mandatory_cols or another source)
-    standard_columns = mandatory_cols.keys()
+    # check if mandatory_cols is dictionnary
+    
+    if isinstance(mandatory_cols, dict):
+        standard_columns = mandatory_cols.keys()
+    else:
+        standard_columns = mandatory_cols.copy()
 
     # Create the edit DataFrame for column renaming
     edit_df = create_edit_df(standard_columns, dfs, rename_dict)
