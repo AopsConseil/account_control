@@ -2,7 +2,10 @@
     "santé": {
         "prestations": {
             "aesio": {
-                "Identifiant Entreprise": "siren",
+                "Identifiant bénéficiaire": "id_bénéf",
+                "Identifiant ouvrant droit": "id_assuré",
+                "Identifiant Entreprise": "id_ent",
+                "SIREN": "siren",
                 "Identifiant Assuré": "id_assuré",
                 "Identifiant Bénéficiaire": "id_bénéf",
                 "SIRET": "siret",
@@ -204,6 +207,7 @@
                 "Catégorie assuré": "cat_assuré",
                 "Date d'affiliation dans la catégorie (PP)": "date_adh_cat",
                 "Date de sortie dans la catégorie (PP)": "date_sortie_cat",
+                "Nom Entreprise": "date_adh_bénéf",
                 "Sexe": "sexe",
                 "Code Postal ouvrant droit": "code_postal",
                 "Régime de cotisation": "régime"

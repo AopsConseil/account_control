@@ -2410,6 +2410,7 @@ def resume_bdd(df, type_bdd):
         with mtn_summary_toggle:
             st_cols = st.columns(2)
             i=0
+            # if (type_bdd == "cotisations") and ('base_TTC' in df.columns)
             if ('cot_TTC' in df.columns) and ('mois_paiement' in df.columns) and ('annee_surv' in df.columns):
                 with  st_cols[i%2]:
                     pivot_cot(df)

@@ -105,7 +105,7 @@ def main():
                 
                 if format_toggle:
                     cols_to_map = ['niveau_couverture_fac', 'niveau_couverture_oblg', 'cat_assuré', 'type_bénéf']
-                    cols_available = [col for col in cols_to_map if col in st.session_state.renamed_preview]
+                    cols_available = [col for col in cols_to_map if col in st.session_state.df.columns]
                     
                     if any(cols_available):
                         st.header("Mise en forme")
@@ -116,11 +116,9 @@ def main():
                             st.session_state.cat_assr_edited_df = None
                             st.session_state.type_bénéf_edited_df = None
                             st.session_state.mapped_cols = []
-                        
-                        mappings = fn.load_mappings(MAPPINGS_FILE)
 
                         # if 'mappings' not in st.session_state:
-                        st.session_state.mappings = mappings
+                        st.session_state.mappings = fn.load_mappings(MAPPINGS_FILE)
 
                         cols = st.columns(2)
                         
@@ -143,13 +141,13 @@ def main():
             #------------------------------------------------- General Control section------------------------------------------------------------------------------ 
             st.divider()
             if st.session_state.final_df is not None:
-                st.header('Contrôle global du fichier')
+                control_général = st.toggle('Contrôle général', key="controle_general_togl")
+                    
+            if control_général:
+                st.header('Contrôle général du fichier')
                 with st.spinner('Chargement en cours ....'):
                     fn.resume_bdd(st.session_state.final_df, st.session_state.type)
-                    
-                    
-                
-                            
+
             #------------------------------------------------- BAD Control section------------------------------------------------------------------------------
                 st.divider()
                 if  st.session_state.type_fichier == 'santé':
