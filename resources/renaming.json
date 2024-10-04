@@ -2,10 +2,30 @@
     "santé": {
         "prestations": {
             "aesio": {
-                "Identifiant bénéficiaire": "id_bénéf",
-                "Identifiant ouvrant droit": "id_assuré",
-                "Identifiant Entreprise": "id_ent",
-                "SIREN": "siren"
+                "Identifiant Entreprise": "siren",
+                "Identifiant Assuré": "id_assuré",
+                "Identifiant Bénéficiaire": "id_bénéf",
+                "SIRET": "siret",
+                "Type de bénéficiaire": "type_bénéf",
+                "Niveau de couverture Obligatoire": "niveau_couverture_oblg",
+                "Niveau de couverture Facultative": "niveau_couverture_fac",
+                "Catégorie assuré": "cat_assuré",
+                "Régime de cotisation": "regime",
+                "Sexe": "sexe",
+                "Code acte": "code_acte",
+                "Libellé acte": "libellé_acte",
+                "Famille acte": "famille_acte",
+                "Quantité actes": "quantité_acte",
+                "Date de soins": "date_soins",
+                "Date de paiement": "date_paiement",
+                "Frais réels": "FR",
+                "Base Remboursement Sécurité Sociale": "Base_SS",
+                "Taux Sécurité Sociale": "Taux_SS",
+                "Remboursement Sécurité Sociale": "R_SS",
+                "Remboursement complémentaire Base obligatoire": "RC_Base",
+                "Remboursement surcomplémentaire Option facultative": "RC_Option",
+                "Remboursement Autre Mutuelle": "RC_Autre",
+                "Reste à charge": "RàC"
             },
             "ag2r": {
                 "Identifiant entreprise": "id_ent",
