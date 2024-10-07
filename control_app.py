@@ -129,12 +129,12 @@ def main():
                     st.session_state.final_df = st.session_state.df.copy()
                     
             #------------------------------------------------- Download option------------------------------------------------------------------------------
-                    if st.session_state.final_df is not None:
-                        st.subheader('Résultat')
-                        fn.preview_file(st.session_state.final_df)
-                    telechargement_expand = st.expander(fn.orange_markdown_string("Téléchargement"))
-                    with telechargement_expand:
-                        fn.telechargement(st.session_state.final_df)
+                if st.session_state.final_df is not None:
+                    st.subheader('Résultat')
+                    fn.preview_file(st.session_state.final_df)
+                telechargement_expand = st.expander(fn.orange_markdown_string("Téléchargement"))
+                with telechargement_expand:
+                    fn.telechargement(st.session_state.final_df)
                     
                 
                 
