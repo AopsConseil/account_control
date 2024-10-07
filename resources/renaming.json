@@ -202,12 +202,12 @@
                 "SIREN": "siren",
                 "SIRET": "siret",
                 "Type de bénéficiaire": "type_bénéf",
+                "Année de naissance bénéficiaire": "annee_naissance",
                 "Niveau de Couverture Obligatoire": "niveau_couverture_oblg",
                 "Niveau de couverture Facultative": "niveau_couverture_fac",
                 "Catégorie assuré": "cat_assuré",
                 "Date d'affiliation dans la catégorie (PP)": "date_adh_cat",
                 "Date de sortie dans la catégorie (PP)": "date_sortie_cat",
-                "Nom Entreprise": "date_adh_bénéf",
                 "Sexe": "sexe",
                 "Code Postal ouvrant droit": "code_postal",
                 "Régime de cotisation": "régime"

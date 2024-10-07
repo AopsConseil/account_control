@@ -2366,7 +2366,9 @@ def resume_bdd(df, type_bdd):
     
     
     # date_cols = cols.get(type_bdd, {}).get("date_cols", {})
-    date_cols = ["date_adh_cat", "date_sortie_cat", "date_adh_bénéf", "date_sortie_bénéf", "date_adh", "date_sortie", "date_soins", "date_paiement", "date_naissance", "date_surv", "date_comptable", "date_debut_indemn", "date_fin_indemn",]
+    # date_cols = ["date_adh_cat", "date_sortie_cat", "date_adh_bénéf", "date_sortie_bénéf", "date_adh", "date_sortie", "date_soins", "date_paiement", "date_naissance", "date_surv", "date_comptable", "date_debut_indemn", "date_fin_indemn",]
+    # select all date columns in df into a list
+    date_cols = list(df.select_dtypes(include=['datetime64']).columns)
     
     # amount_cols = cols.get(type_bdd, {}).get("amount_cols", {})
     amount_cols = [ "FR", "Base_SS", "Taux_SS", "R_SS", "RC_Base", "RC_Option", "RC_Autre", "RàC", "cot_TTC", "base_TTC", "option_TTC", "option_oblg_TTC", "option_fac_TTC", "prest_TTC"]
@@ -2725,6 +2727,8 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                     if convert_dtype and type_bdd:
                         df = convert_dtypes(df, type_fichier=st.session_state.type_fichier, type_bdd=type_bdd)
                     
+                    df = specific_changes(df, type_fichier=st.session_state.type_fichier, type_bdd=type_bdd)
+                    
                     all_dfs.append(df)
 
                 try:
@@ -2738,6 +2742,38 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 #                     
             
             # return df_merged #list(all_dfs.values())
+
+def specific_changes(df, type_fichier, type_bdd):
+    # Specific changes for each file type and database type
+    
+    secific_columns = ["annee_naissance"]
+    
+    for col in secific_columns:
+        if col in df.columns:
+            try:
+                if col == "annee_naissance":
+                    sup_dates = df.loc[df["annee_naissance"].astype(int) > datetime.date.today().year]
+                    inf_dates = df.loc[df["annee_naissance"].astype(int) < 1900]
+                    df["date_naissance_créé"] = df['annee_naissance'].copy()
+                    if len(sup_dates)>0:
+                        # remplcer les valeurs par la moyenne
+                        df.loc[df["date_naissance_créé"].astype(int) > datetime.date.today().year,"date_naissance_créé"] = df["date_naissance_créé"].astype(int).mean().astype(int)
+                        ## display warning:
+                        st.warning(f"""La colonne {col} contient {len(sup_dates)} valeurs supérieures à la date d'aujourd'hui. Veuillez vérifier les données. 
+ces valeus vont etre remplacés par la moyenne juste dans les statistiques des dates""")
+                    elif len(inf_dates)>0:
+                        df.loc[df["date_naissance_créé"].astype(int) < 1900,"date_naissance_créé"] = df["date_naissance_créé"].astype(int).mean().astype(int)
+                        ## display warning:
+                        st.warning(f"""La colonne {col} contient {len(inf_dates)} valeurs inférieures à 1900. Veuillez vérifier les données. 
+ces valeus vont etre remplacés par la moyenne juste dans les statistiques des dates""")
+                        
+                        
+                    df["date_naissance_créé"] = pd.to_datetime(df['date_naissance_créé'].astype(str) + '-01-01')
+            except Exception as e:
+                st.error(f"Une erreur est survenue lors de la modification de la colonne {col} \n {e}")
+            
+    return df
+        
 
 def create_edit_df(standard_columns, dfs, rename_dict):
     """
