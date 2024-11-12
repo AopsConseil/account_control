@@ -83,17 +83,14 @@ def main():
         rename_dict = fn.get_col_maps(type_fichier=st.session_state.type_fichier ,type_bdd=st.session_state.type,  assureur=st.session_state.assr, json_path=json_path)
         mandatory_cols = fn.mandatory_cols.get(st.session_state.type_fichier, {})[st.session_state.type]
         
-        fn.upload_and_rename_multiple("Chargement des Fichiers", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
+        fn.upload_and_rename_multiple("Chargement des Fichiers", mandatory_cols=mandatory_cols, rename_dict=rename_dict, store_key='df', json_path=json_path, types=['csv', 'xlsx', 'xls', 'xlsb', 'pkl', 'pickle'], convert_dtype=True, type_bdd=st.session_state.type, key="uploaded_files")
         
+            #------------------------------------------------- AOPS Codification ------------------------------------------------------------------------------#
         if st.session_state.df is not None:
             if (st.session_state.type_fichier == 'santé') and(st.session_state.type == 'prestations'):
                 if "code_acte" in st.session_state.df.columns:
-                    try:
-                        st.session_state.df = fn.merge_codification_aops(st.session_state.df, assureur=st.session_state.assr, codification_file_path=r"C:\Users\Yacine AMMI\Yacine\Utilities\Codifications Actes_v170524.xlsx")
-                        st.success("Codification AOPS ajouté avec succès")
-
-                    except Exception:
-                        st.error("Erreur lors de la codification des actes AOPS")
+                    fn.codification_aops(st.session_state.df)
+                    
                             
             #------------------------------------------------- Format labels ------------------------------------------------------------------------------     
             
@@ -135,9 +132,6 @@ def main():
                 telechargement_expand = st.expander(fn.orange_markdown_string("Téléchargement"))
                 with telechargement_expand:
                     fn.telechargement(st.session_state.final_df)
-                    
-                
-                
             #------------------------------------------------- General Control section------------------------------------------------------------------------------ 
             st.divider()
             if st.session_state.final_df is not None:

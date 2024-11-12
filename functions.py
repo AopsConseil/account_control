@@ -314,6 +314,9 @@ def check_ids_presence(df_t1, df_t2, col_name, return_df=False, warn_type='warni
     return None
 
 def check_special_chars(df, col_name, special_chars, return_df=False, warn_type='warning'):
+    """
+    Check for special characters in a column.
+    """
     # Créer un modèle regex pour les caractères spéciaux
     pattern = f"[{''.join(special_chars)}]"
     
@@ -337,7 +340,54 @@ def check_id_length_and_content(df, col_name, length, required_chars, return_df=
         return {warn_type: f'{len(invalid_ids)} IDs dans {col_name} ne contient pas {length} caractères ou ne contient pas {required_chars}.'}
     return None
 
+# def check_date_formats(df_raw, col, date_patterns=None, return_df=False, warn_type='warning'):
+#     if date_patterns is None:
+#         date_patterns = [
+#             "%Y-%m-%d",  # "YYYY-MM-DD"
+#             "%d/%m/%Y",  # "DD/MM/YYYY"
+#             "%d/%m/%y",  # "D/M/YYYY"
+#             "%m/%d/%Y",  # "MM/DD/YYYY"
+#             "%m/%d/%Y",  # "M/D/YYYY"
+#             "%Y/%m/%d",  # "YYYY/MM/DD"
+#             "%m/%d/%y",  # "M/D/YY"
+#             "%m/%d/%y",  # "MM/DD/YY"
+#             "%d/%m/%y",  # "DD/MM/YY"
+#             "%d/%m/%y",  # "D/M/YY"
+#             "%Y"         # "YYYY"
+#         ]
+
+#     # Convertir toutes les valeurs en chaînes de caractères
+#     df = df_raw[[col]].copy()
+#     df[col] = df[col].astype(str)
+#     df[col] = df[col].str.replace(" 00:00:00", "")
+#     df[col] = df[col].str.replace("2999", "2099")
+    
+#     # Initialiser un masque pour les dates valides
+#     valid_mask = pd.Series([False] * len(df), index=df.index)
+    
+#     # Vérifier les formats spécifiés
+#     for pattern in date_patterns:
+#         try:
+#             valid_dates = pd.to_datetime(df[col], format=pattern, errors='coerce').notna()
+#             valid_mask |= valid_dates
+#         except Exception :
+#             continue
+
+#     # Calculer le nombre de dates invalides
+#     invalid_dates_count = (~valid_mask).sum()
+    
+#     if invalid_dates_count > 0:
+#         if return_df:
+#             return df[~valid_mask]
+#         percentage=(invalid_dates_count/df.shape[0])*100
+#         return {warn_type: f'{invalid_dates_count} lignes ({percentage:.2f}%) dans {col} ont des formats de date non valides.'}
+    
+#     return None
+
 def check_date_formats(df_raw, col, date_patterns=None, return_df=False, warn_type='warning'):
+    """
+    Vérifie les formats de date dans une colonne spécifique d'un DataFrame.
+    """
     if date_patterns is None:
         date_patterns = [
             "%Y-%m-%d",  # "YYYY-MM-DD"
@@ -350,39 +400,53 @@ def check_date_formats(df_raw, col, date_patterns=None, return_df=False, warn_ty
             "%m/%d/%y",  # "MM/DD/YY"
             "%d/%m/%y",  # "DD/MM/YY"
             "%d/%m/%y",  # "D/M/YY"
-            "%Y"         # "YYYY"
+            "%Y",        # "YYYY"
+            "%Y-%m",     # "YYYY-MM"
+            "%m",        # "MM"
+            "%Y%m"       # "YYYYMM"
         ]
-
-    # Convertir toutes les valeurs en chaînes de caractères
+    
+    # Copy the column and preprocess it
     df = df_raw[[col]].copy()
     df[col] = df[col].astype(str)
     df[col] = df[col].str.replace(" 00:00:00", "")
     df[col] = df[col].str.replace("2999", "2099")
     
-    # Initialiser un masque pour les dates valides
+    # Initialize a valid mask
     valid_mask = pd.Series([False] * len(df), index=df.index)
     
-    # Vérifier les formats spécifiés
+    # Check each date pattern
     for pattern in date_patterns:
         try:
+            # Use errors='coerce' to get NaT for invalid formats
             valid_dates = pd.to_datetime(df[col], format=pattern, errors='coerce').notna()
             valid_mask |= valid_dates
-        except Exception :
+        except Exception as e:
             continue
+    
+    # Additionally, use pandas' flexible date parser as a fallback for any format
+    try:
+        inferred_dates = pd.to_datetime(df[col], errors='coerce', infer_datetime_format=True).notna()
+        valid_mask |= inferred_dates
+    except Exception as e:
+        pass
 
-    # Calculer le nombre de dates invalides
+    # Count invalid dates
     invalid_dates_count = (~valid_mask).sum()
     
     if invalid_dates_count > 0:
         if return_df:
             return df[~valid_mask]
-        percentage=(invalid_dates_count/df.shape[0])*100
+        percentage = (invalid_dates_count / df.shape[0]) * 100
         return {warn_type: f'{invalid_dates_count} lignes ({percentage:.2f}%) dans {col} ont des formats de date non valides.'}
     
     return None
 
+
 def correction_dates_integrale(df_raw, col, date_formats=None, add_format=None):
-    
+    """
+    Correction des dates dans une colonne de DataFrame.
+    """
     df = df_raw[[col]].copy()
     # Convertir toutes les valeurs en chaînes de caractères
     df[col] = df[col].astype(str)
@@ -626,6 +690,9 @@ def check_taux_ss(df_raw, col, return_col_corr=False, return_df=False, warn_type
     
 
 def check_fr_base_taux(df_raw, fr_col='FR', base_ss_col='Base_SS', taux_ss_col='Taux_SS', warn_type='warning'):
+    """
+    Vérifie la condition que si FR == 0, Base_SS et Taux_SS doivent etre vides.
+    """
     df = df_raw[[fr_col, base_ss_col, taux_ss_col]]
     df[taux_ss_col] = check_taux_ss(df, taux_ss_col, return_col_corr=True)
     
@@ -640,7 +707,10 @@ def check_fr_base_taux(df_raw, fr_col='FR', base_ss_col='Base_SS', taux_ss_col='
     return None
 
 def check_r_ss_equality(df_raw, r_ss_col='R_SS', base_ss_col='Base_SS', taux_ss_col='Taux_SS', tolerance=1, return_df=False, warn_type='warning'):
-    
+    """
+    Vérifie si les valeurs de R_SS sont égales à la valeur de Base_SS
+    multipliée par Taux_SS, avec une tolérance de tolerance.
+    """
     df = df_raw[[r_ss_col, base_ss_col, taux_ss_col]]
     df[taux_ss_col] = check_taux_ss(df, taux_ss_col, return_col_corr=True)
     
@@ -657,7 +727,10 @@ def check_r_ss_equality(df_raw, r_ss_col='R_SS', base_ss_col='Base_SS', taux_ss_
     return None
 
 def check_r_ss_without_base_taux(df_raw, r_ss_col='R_SS', base_ss_col='Base_SS', taux_ss_col='Taux_SS', return_df=False, warn_type='warning'):
-    
+    """
+    Vérifie si les valeurs de R_SS sont égales à 0 lorsque Base_SS
+    et Taux_SS sont égaux à 0.
+    """
     df = df_raw[[r_ss_col, base_ss_col, taux_ss_col]]
     df[taux_ss_col] = check_taux_ss(df, taux_ss_col, return_col_corr=True)
     
@@ -1124,8 +1197,10 @@ def check_cotisations(assureur, df_raw, dates, dft_1_raw=None, rename_dict=None,
     
     for col, format in date_checks.items():
         if col in df.columns:
-            
-            store_result(col, check_date_formats(df, col, date_patterns=format,  warn_type='warning'), resultats)
+            if format is not None:
+                store_result(col, check_date_formats(df, col, date_patterns=format,  warn_type='warning'), resultats)
+            else:
+                store_result(col, check_advanced_date_formats(df, col, date_formats=None, warn_type='warning') , resultats)
                 
     ## ==========================Check of valid values======================== cols:[niveau_couverture_fac', 'cat_assuré']
     valid_values_config={
@@ -1828,13 +1903,13 @@ def convert_dtypes(df, type_fichier, type_bdd, raise_warning=True):
     
     return df
 
-def merge_codification_aops(df, assureur, codification_file_path=r"C:\Users\Yacine AMMI\Yacine\Utilities\Codifications Actes_v170524.xlsx"):
+def merge_codification_aops(df, codification_file, assureur):
     """
     Merge the codification of AOPs with the DataFrame.
     """
     # Load the codification file
     codification_df = pd.read_excel(
-        codification_file_path,
+        codification_file,
         usecols=[
             "Assureur",
             "Code acte",
@@ -1861,6 +1936,27 @@ def merge_codification_aops(df, assureur, codification_file_path=r"C:\Users\Yaci
         },
         axis=1,
     ).drop("Code acte", axis=1)
+    
+def codification_aops(df):
+    
+    with st.expander('Codification AOPS', expanded=True):
+        aops_codes = st.file_uploader("Veuillez charger le fichier  de codification AOPS", accept_multiple_files=False, type=['xls', 'xlsx', 'xlsb'], key='aops_codes_file')
+                        
+        if aops_codes is not None:
+            if st.button('Valider'):
+                try:
+                    st.session_state.df = merge_codification_aops(st.session_state.df, codification_file=aops_codes, assureur=st.session_state.assr)
+                    st.success("Codification AOPS ajouté avec succès")
+                    
+                    missing_codes = st.session_state.df.loc[st.session_state.df['famille_acte_aops'].isnull()]
+                    if not missing_codes.empty:
+                        st.warning("Il y a des codes AOPS manquants avec les informations suivantes")
+                        render_values(missing_codes['code_acte'].unique(), max_display=50, display_subtitle=True)
+                        st.dataframe(missing_codes.drop_duplicates(subset=['code_acte']))
+
+                except Exception as e:
+                    st.error(f"Erreur lors de la codification des actes AOPS \n {e}")
+        
 
 #______________________________________________________ Rendering functions ____________________________________________________________
 def display_unique_values(df, columns):
@@ -2278,6 +2374,24 @@ def pivot_cot(df):
         render_header( "Pivot des coûts", )
         render_custom_text('Pivot des coûts totaux (TTC) par mois de paiement et annee de survenance',)
         st.dataframe(pivot_df, use_container_width=True)
+
+def pivot_prest(df):
+    
+    df_temp = df[['date_paiement', 'date_soins', 'RC']]
+    df_temp['mois_paiement'] = df['date_paiement'].dt.month
+    df_temp['annee_paiement'] = df['date_paiement'].dt.year
+    df_temp['annee_soins'] = df['date_soins'].dt.year
+    
+    pivot_df = df_temp.pivot_table(index=['annee_paiement','mois_paiement', ],
+                                    columns='annee_soins',
+                                    values='RC',
+                                    aggfunc='sum',
+                                    fill_value=0)
+    
+    with st.container(border=True):
+        render_header( "Pivot des prestations", )
+        render_custom_text('Pivot des prestations totales par mois de paiement et annee de survenance',)
+        st.dataframe(pivot_df, use_container_width=True)
         
         
                     
@@ -2418,6 +2532,13 @@ def resume_bdd(df, type_bdd):
                     pivot_cot(df)
                     i+=1
 
+            if ('RC' in df.columns) and ('date_paiement' in df.columns) and ('date_soins' in df.columns):
+                # check if date_paiement and date_soins are date columns
+                if pd.api.types.is_datetime64_dtype(df['date_paiement']) or pd.api.types.is_datetime64_dtype(df['date_soins']):
+                    with  st_cols[i%2]:
+                        pivot_prest(df)
+                    
+            
             for col in amount_cols:
                 if col in df.columns:
                     with  st_cols[i%2]:
@@ -2710,7 +2831,6 @@ def upload_and_rename_multiple(title, mandatory_cols, rename_dict, store_key, js
                 for file in uploaded_files:
                     gc.collect()
                     import_dtypes = get_dtypes(rename_dict_updated[file.name])
-                    # st.write(import_dtypes, rename_dict_updated[file.name])
                     df = load_file(file, dtype=import_dtypes, usecols=list(rename_dict_updated[file.name].keys()))
                     df = rename_func(
                         df,
@@ -2771,6 +2891,11 @@ ces valeus vont etre remplacés par la moyenne juste dans les statistiques des d
                     df["date_naissance_créé"] = pd.to_datetime(df['date_naissance_créé'].astype(str) + '-01-01')
             except Exception as e:
                 st.error(f"Une erreur est survenue lors de la modification de la colonne {col} \n {e}")
+    
+    # Add RC column (RC_Base + RC_Option)
+    if (type_fichier=='santé') and (type_bdd=='prestations'):
+        if ('RC_Base' in df.columns) and ('RC_Option' in df.columns) and ('RC' not in df.columns):
+            df['RC'] = df['RC_Base'].fillna(0) + df['RC_Option'].fillna(0)
             
     return df
         

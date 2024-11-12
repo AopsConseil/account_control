@@ -74,6 +74,12 @@
         "ayd": "Conjoint",
         "chef de famille": "Assuré",
         "autre": "Enfant",
-        "assure": "Assuré"
+        "assure": "Assuré",
+        "": " ",
+        "ad": "Assuré",
+        "en": "Enfant",
+        "cj": "Conjoint",
+        "mp": "Enfant",
+        "NaN": " "
     }
 }

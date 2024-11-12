@@ -2,12 +2,10 @@
     "santé": {
         "prestations": {
             "aesio": {
-                "Identifiant bénéficiaire": "id_bénéf",
-                "Identifiant ouvrant droit": "id_assuré",
                 "Identifiant Entreprise": "id_ent",
-                "SIREN": "siren",
                 "Identifiant Assuré": "id_assuré",
                 "Identifiant Bénéficiaire": "id_bénéf",
+                "SIREN": "siren",
                 "SIRET": "siret",
                 "Type de bénéficiaire": "type_bénéf",
                 "Niveau de couverture Obligatoire": "niveau_couverture_oblg",
@@ -56,7 +54,7 @@
             },
             "macif": {
                 "Identifiant entreprise": "id_ent",
-                "Identifiant Assuré": "id_assuré",
+                "Identifiant ouvrant droit": "id_assuré",
                 "Clé unique assuré": "id_bénéf",
                 "Lien type bénéficiaire": "type_bénéf",
                 "Affiliation Base / Option": "niveau_couverture_fac",
@@ -104,18 +102,18 @@
         },
         "cotisations": {
             "aesio": {
-                "Identifiant Entreprise": "id_ent",
+                "Identifiant entreprise": "id_ent",
                 "Identifiant ouvrant droit": "id_assuré",
                 "Identifiant bénéficiaire": "id_bénéf",
                 "Code SIREN": "siren",
                 "Code SIRET": "siret",
-                "Trimestre de Survenance": "tr_surv",
+                "Trimestre de survenance": "tr_surv",
                 "Année comptable": "annee_comptable",
                 "Année de survenance": "annee_surv",
-                "Mois de Paiement": "mois_paiement",
+                "Mois de paiement": "mois_paiement",
                 "Régime de cotisation": "régime",
                 "Catégorie d'assuré": "cat_assuré",
-                "Type de Bénéficiaire": "type_bénéf",
+                "Type de bénéficiaire": "type_bénéf",
                 "Niveau de couverture Obligatoire Entreprise": "niveau_couverture_oblg",
                 "Niveau de couverture Facultatif": "niveau_couverture_fac",
                 "Cotisation BASE Obligatoire TTC": "base_TTC",
