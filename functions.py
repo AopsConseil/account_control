@@ -2556,11 +2556,11 @@ def resume_bdd(df, type_bdd):
                     display_id_column(df, col)
                 i+=1
     
-    # Check codification AOPS
-    if 'famille_acte_aops' in df.columns:
-        codification_toggle = st.expander(orange_markdown_string('Afficher les résumés de la codification AOPS'))
-        with codification_toggle:
-            check_codification_aops(df)
+    # # Check codification AOPS
+    # if 'famille_acte_aops' in df.columns:
+    #     codification_toggle = st.expander(orange_markdown_string('Afficher les résumés de la codification AOPS'))
+    #     with codification_toggle:
+    #         check_codification_aops(df)
             
             
 ###################################################################################
